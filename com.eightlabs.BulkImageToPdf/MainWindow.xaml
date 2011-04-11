@@ -27,7 +27,7 @@
                 </Button>
             </Grid>
             <Grid>
-                <ListBox Drop="Grid_Drop" AllowDrop="True"></ListBox>
+                <ListBox ItemsSource="{Binding FilesList}" Drop="Grid_Drop" AllowDrop="True"></ListBox>
             </Grid>
         </DockPanel>
     </Grid>

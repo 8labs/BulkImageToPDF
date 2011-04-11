@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 
 using PdfSharp.Pdf;
 using com.eightlabs.BulkImageToPdf.ViewModels;
+using System.IO;
 
 namespace com.eightlabs.BulkImageToPdf
 {
@@ -50,7 +51,10 @@ namespace com.eightlabs.BulkImageToPdf
             {
                 foreach (string filePath in ((System.Windows.DataObject)e.Data).GetFileDropList())
                 {
-                    
+                    if (((MainWindowViewModel)DataContext).FilesList != null)
+                    {
+                        ((MainWindowViewModel)DataContext).FilesList.Add(new FileInfo(filePath));
+                    }
                 }
             }
         }
