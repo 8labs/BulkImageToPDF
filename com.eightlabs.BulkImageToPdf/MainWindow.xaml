@@ -35,11 +35,9 @@
 
                 </Button>
             </Grid>
-            <Grid>
-                <ListBox ItemsSource="{Binding FilesList}" Drop="Grid_Drop" AllowDrop="True">
-                </ListBox>
+            <Viewbox Drop="Grid_Drop" AllowDrop="True">
                 <Image Source="{StaticResource DragDrop}" Drop="Grid_Drop" AllowDrop="True" Visibility="{Binding FilesListIsEmpty, Converter={StaticResource booleanVisibilityConverter}}" />
-            </Grid>
+            </Viewbox>
         </DockPanel>
     </Grid>
 </Window>
