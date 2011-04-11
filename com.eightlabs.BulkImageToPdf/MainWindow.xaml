@@ -26,7 +26,7 @@
 
                 </Button>
             </Grid>
-            <Grid>
+            <Grid Drop="Grid_Drop">
 
             </Grid>
         </DockPanel>

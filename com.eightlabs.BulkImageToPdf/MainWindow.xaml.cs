@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using PdfSharp.Pdf;
+using com.eightlabs.BulkImageToPdf.ViewModels;
 
 namespace com.eightlabs.BulkImageToPdf
 {
@@ -24,7 +25,7 @@ namespace com.eightlabs.BulkImageToPdf
         public MainWindow()
         {
             InitializeComponent();
-
+            DataContext = new MainWindowViewModel();
             //string[] files = { "sample.TIF", "sample.JPG" };
             //using (PdfDocument doc = ImgToPdf.GetDocumentFromFiles(files))
             //{
@@ -41,6 +42,17 @@ namespace com.eightlabs.BulkImageToPdf
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void Grid_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data is System.Windows.DataObject && ((System.Windows.DataObject)e.Data).ContainsFileDropList())
+            {
+                foreach (string filePath in ((System.Windows.DataObject)e.Data).GetFileDropList())
+                {
+                    
+                }
+            }
         }
     }
 }
