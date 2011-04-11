@@ -8,7 +8,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public void MainWindowViewModel()
+        public MainWindowViewModel()
         {
 
         }

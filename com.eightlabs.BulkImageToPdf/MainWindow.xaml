@@ -26,8 +26,8 @@
 
                 </Button>
             </Grid>
-            <Grid Drop="Grid_Drop">
-
+            <Grid>
+                <ListBox Drop="Grid_Drop" AllowDrop="True"></ListBox>
             </Grid>
         </DockPanel>
     </Grid>
