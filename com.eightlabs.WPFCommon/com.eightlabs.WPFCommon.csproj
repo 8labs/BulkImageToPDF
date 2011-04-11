@@ -50,6 +50,8 @@
   <ItemGroup>
     <Compile Include="Commands\CommandReferences.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
+    <Compile Include="Converters\BooleanVisibilityConverter.cs" />
+    <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

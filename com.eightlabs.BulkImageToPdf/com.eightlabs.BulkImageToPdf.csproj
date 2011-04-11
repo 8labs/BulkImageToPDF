@@ -104,7 +104,9 @@
       <Name>com.eightlabs.WPFCommon</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Converters\" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Media\DragDrop.png" />
   </ItemGroup>
