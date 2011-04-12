@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -23,15 +24,15 @@ namespace com.eightlabs.BulkImageToPdf
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        private MainWindowViewModel vm;
+
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainWindowViewModel();
-            //string[] files = { "sample.TIF", "sample.JPG" };
-            //using (PdfDocument doc = ImgToPdf.GetDocumentFromFiles(files))
-            //{
-            //    doc.Save("test.pdf");
-            //}
+            vm = new MainWindowViewModel();
+            DataContext = vm;
+
 
         }
 
@@ -49,13 +50,30 @@ namespace com.eightlabs.BulkImageToPdf
         {
             if (e.Data is System.Windows.DataObject && ((System.Windows.DataObject)e.Data).ContainsFileDropList())
             {
-                foreach (string filePath in ((System.Windows.DataObject)e.Data).GetFileDropList())
+                StringCollection files = ((System.Windows.DataObject)e.Data).GetFileDropList();
+
+                if (files.Count > 0)
                 {
-                    if (((MainWindowViewModel)DataContext).FilesList != null)
+                    this.vm.AddFiles(files);
+
+                    // Configure open file dialog box
+                    Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+                    dlg.FileName = "Document"; // Default file name
+                    dlg.DefaultExt = ".pdf"; // Default file extension
+                    dlg.Filter = "PDF documents (.pdf)|*.pdf"; // Filter files by extension
+
+                    // Show open file dialog box
+                    Nullable<bool> result = dlg.ShowDialog();
+
+                    // Process open file dialog box results
+                    if (result == true)
                     {
-                        ((MainWindowViewModel)DataContext).FilesList.Add(new FileInfo(filePath));
+                        // Open document
+                        this.vm.ProcessFiles(dlg.FileName);
                     }
+
                 }
+
             }
         }
     }

@@ -13,7 +13,7 @@ namespace com.eightlabs.BulkImageToPdf
 {
     public static class ImgToPdf
     {
-        public static PdfDocument GetDocumentFromFiles(string[] files)
+        public static PdfDocument GetDocumentFromFiles(List<string> files, bool throwOnFail)
         {
             PdfDocument doc = new PdfDocument();
             doc.Info.Title = "";
@@ -25,11 +25,22 @@ namespace com.eightlabs.BulkImageToPdf
             //TODO any sorting, etc... or should happen prior to this function
             foreach (string f in files)
             {
+                try
+                {
+                    if (File.Exists(f)) //TODO more verification on what we're working on.
+                    {
+                        BitmapSource bmp = GetImageFromFile(f);
+                        //TODO handle scaling here for better results/speed than the pdf lib scaling??
+                        //TODO convert to monochrome or otherwise compress?
+                        AddImagePage(doc, bmp); //add a page of the image
+                    }
+                }
+                catch (Exception)
+                {
+                    //only throw if specified
+                    if (throwOnFail) throw;
+                }
 
-                BitmapSource bmp = GetImageFromFile(f);
-                //TODO handle scaling here for better results/speed than the pdf lib scaling??
-                //TODO convert to monochrome or otherwise compress?
-                AddImagePage(doc, bmp); //add a page of the image
             }
 
             return doc;
