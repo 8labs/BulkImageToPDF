@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Media.Animation;
 
 using PdfSharp.Pdf;
 using com.eightlabs.BulkImageToPdf.ViewModels;
@@ -36,16 +37,7 @@ namespace com.eightlabs.BulkImageToPdf
 
         }
 
-        private void Help_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
+      
         private void Grid_Drop(object sender, DragEventArgs e)
         {
             if (e.Data is System.Windows.DataObject && ((System.Windows.DataObject)e.Data).ContainsFileDropList())
@@ -55,6 +47,8 @@ namespace com.eightlabs.BulkImageToPdf
                 if (files.Count > 0)
                 {
                     this.vm.AddFiles(files);
+
+
 
                     // Configure open file dialog box
                     Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
@@ -69,12 +63,45 @@ namespace com.eightlabs.BulkImageToPdf
                     if (result == true)
                     {
                         // Open document
-                        this.vm.ProcessFiles(dlg.FileName);
+                        this.vm.ProcessFilesAsync(dlg.FileName);
                     }
+
+                    this.dropView.Visibility = System.Windows.Visibility.Collapsed;
+
+                    //this.optionsView.Visibility = System.Windows.Visibility.Visible;
+
+                    this.processingView.Visibility = System.Windows.Visibility.Visible;
 
                 }
 
             }
         }
+
+        private void view_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if ((bool)e.NewValue == true)
+            {
+                //fade it in
+                // Create a storyboard to contain the animations.
+                Storyboard storyboard = new Storyboard();
+                TimeSpan duration = new TimeSpan(0, 0, 0, 0, 250);
+
+                // Create a DoubleAnimation to fade the not selected option control
+                DoubleAnimation animation = new DoubleAnimation();
+
+                animation.From = 0.0;
+                animation.To = 1.0;
+                animation.Duration = new Duration(duration);
+                // Configure the animation to target de property Opacity
+                Storyboard.SetTargetName(animation, ((FrameworkElement)sender).Name);
+                Storyboard.SetTargetProperty(animation, new PropertyPath(Control.OpacityProperty));
+                // Add the animation to the storyboard
+                storyboard.Children.Add(animation);
+
+                // Begin the storyboard
+                storyboard.Begin(this);
+            }
+        }
+
     }
 }

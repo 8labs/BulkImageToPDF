@@ -51,8 +51,11 @@ namespace com.eightlabs.BulkImageToPdf
             BitmapImage bi = new BitmapImage();
             // BitmapImage.UriSource must be in a BeginInit/EndInit block.
             bi.BeginInit();
-            bi.UriSource = new Uri(fileName, UriKind.RelativeOrAbsolute);
+            bi.UriSource = new Uri(fileName, UriKind.RelativeOrAbsolute);  //set the file...
+            bi.CacheOption = BitmapCacheOption.None;  //keeps the bitmap from caching in memory during processing.
             bi.EndInit();
+            
+            bi.Freeze();  //allows reading on all threads
 
             return bi;
         }

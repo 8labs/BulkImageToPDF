@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:com.eightlabs.WPFCommon.Converters;assembly=com.eightlabs.WPFCommon"
         xmlns:local="clr-namespace:com.eightlabs.BulkImageToPdf"
-        Title="8labs Bulk Image to PDF Converter" Height="350" Width="525" WindowStyle="ToolWindow">
+        xmlns:views="clr-namespace:com.eightlabs.BulkImageToPdf.Views"
+        Title="8labs Bulk Image to PDF Converter" Height="350" Width="525" WindowStyle="SingleBorderWindow" SnapsToDevicePixels="True" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300">
     <Window.Resources>
         <converters:InverseBooleanConverter x:Key="inverseBooleanConverter" />
         <converters:BooleanVisibilityConverter x:Key="booleanVisibilityConverter" />
@@ -12,17 +13,11 @@
 
     </Window.Resources>
 
-    <Grid Background="White">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" TextAlignment="Center" FontSize="25" Foreground="Gray">Drop image files to convert to PDF</TextBlock>
-        <Viewbox Grid.Row="1">
-            <StackPanel>
-                <Image Source="{StaticResource DragDrop}" Drop="Grid_Drop" AllowDrop="True" Visibility="{Binding FilesListIsEmpty, Converter={StaticResource booleanVisibilityConverter}}" />
-            </StackPanel>
-        </Viewbox>
+    <Grid>
+        <views:DropFiles x:Name="dropView" AllowDrop="True" Drop="Grid_Drop" IsVisibleChanged="view_IsVisibleChanged" />
+        <views:ConversionOptions x:Name="optionsView"  Visibility="Collapsed" IsVisibleChanged="view_IsVisibleChanged" />
+        <views:ProcessingFiles x:Name="processingView"  Visibility="Collapsed" IsVisibleChanged="view_IsVisibleChanged" />
+
     </Grid>
 
 </Window>

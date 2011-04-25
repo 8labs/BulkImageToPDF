@@ -8,6 +8,9 @@ using com.eightlabs.WPFCommon.ViewModels;
 using System.Collections.ObjectModel;
 using System.IO;
 
+using System.ComponentModel;
+using System.Windows.Threading;
+
 using System.Windows.Media.Imaging;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -20,7 +23,9 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
     {
         public MainWindowViewModel()
         {
-            this.FilesList = new List<string>();
+            this.ImageFilesList = new List<IncomingFileViewModel>();
+            this.BadFilesList = new List<IncomingFileViewModel>();
+            this.Converter = new ConversionViewModel();
         }
 
         #region Private Variables
@@ -29,11 +34,35 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
         #region Public Variables
 
-        public List<string> FilesList { get; set; }
+        /// <summary>
+        /// View model for displaying the status of files being converted.
+        /// </summary>
+        public ConversionViewModel Converter { get; set; }
+
+        /// <summary>
+        /// Image files to be converted
+        /// </summary>
+        public List<IncomingFileViewModel> ImageFilesList { get; set; }
+
+        /// <summary>
+        /// Image files to be converted
+        /// </summary>
+        public List<IncomingFileViewModel> BadFilesList { get; set; }
+
+        /// <summary>
+        /// currently selected file
+        /// </summary>
+        public IncomingFileViewModel CurrentFile { get; set; }
 
         #endregion
 
         #region Private Methods
+
+        //comparison for the file view models
+        private static int CompareFileName(IncomingFileViewModel x, IncomingFileViewModel y)
+        {
+            return x.FileName.CompareTo(y.FileName);
+        }
 
         #endregion
 
@@ -46,27 +75,57 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         public void AddFiles(StringCollection files)
         {
             //let the processor handle it for now...
-            this.FilesList.AddRange(files.Cast<string>().ToList());
-            this.FilesList.Sort();
+            foreach (string f in files)
+            {
+                //create a view model for handling these
+                IncomingFileViewModel fvm = new IncomingFileViewModel();
+                fvm.FileName = f;
+                try
+                {
+                    BitmapSource bmp = ImgToPdf.GetImageFromFile(f);
+                    fvm.Image = bmp;
+                    ImageFilesList.Add(fvm);
+                }
+                catch (Exception ex)
+                {
+                    //log the errors so we can view them in bulk
+                    fvm.Error = ex.Message;
+                    BadFilesList.Add(fvm);
+                }
+            }
+
+            //sort the list
+            ImageFilesList.Sort(CompareFileName);
         }
 
         /// <summary>
-        /// Processes the files in the list
+        /// Cancels any current processing
         /// </summary>
-        public void ProcessFiles(string outFile)
+        public void CancelProcessing()
         {
-            using (PdfDocument doc = ImgToPdf.GetDocumentFromFiles(this.FilesList, false))
-            {
-                //save the output 
-                doc.Save(outFile);
-            }
-
+            this.Converter.CancelProcessing();
         }
 
+        /// <summary>
+        /// Clears any loaded or failed files
+        /// </summary>
+        public void ClearFiles()
+        {
+            this.BadFilesList.Clear();
+            this.ImageFilesList.Clear();
+        }
+
+        /// <summary>
+        /// Process the files in the list on a background worker...
+        /// </summary>
+        /// <param name="outFile"></param>
+        public void ProcessFilesAsync(string outFile)
+        {
+            this.Converter.ProcessFilesAsync(this.ImageFilesList, outFile);
+        }
+
+
         #endregion
 
-        #region Commands
-
-        #endregion
     }
 }
