@@ -3,25 +3,40 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:c="clr-namespace:com.eightlabs.WPFCommon.Converters;assembly=com.eightlabs.WPFCommon"
              mc:Ignorable="d" 
              d:DesignHeight="350" d:DesignWidth="525">
+    <UserControl.Resources>
+        <c:BoolToVisibilityConverter x:Key="boolToVisibilityConverter" FalseValue="Collapsed" TrueValue="Visible" />
+        <c:BoolToVisibilityConverter x:Key="boolToInverseVisibilityConverter" FalseValue="Visible" TrueValue="Collapsed" />
+        <c:BoolToStringConverter x:Key="boolToColorBorderConverter" TrueValue="#76C075" FalseValue="#0168B3" />
+        
+    </UserControl.Resources>
     <Border x:Name="borderCustomDialog" CornerRadius="0,0,0,0" Padding="0,0,0,0">
         <DockPanel Margin="0,0,0,0" Width="Auto" Height="Auto">
             <Border DockPanel.Dock="Bottom" Margin="0,10,0,0" VerticalAlignment="Top" Height="Auto" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                 <DockPanel Margin="0,8,0,8" Width="Auto" Height="Auto" Background="{x:Null}">
-                    <Button IsCancel="True" x:Name="btnCancel" Click="btnCancel_Click" Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Center" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button IsCancel="True" x:Name="btnCancel" Click="btnCancel_Click" Visibility="{Binding Path=Converter.IsCompleted, Converter={StaticResource boolToInverseVisibilityConverter}}" Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Center" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button Command="{Binding Path=ExitCommand}" Visibility="{Binding Path=Converter.IsCompleted, Converter={StaticResource boolToVisibilityConverter}}" Height="30" Width="100" Content="Close" HorizontalAlignment="Center" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
                 </DockPanel>
             </Border>
             <Grid Background="White" Width="Auto" Height="Auto" Margin="0,-1,0,0">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Border Grid.Row="0" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                     <TextBlock TextAlignment="Center" FontSize="25" Foreground="Gray">Processing your files...</TextBlock>
                 </Border>
-                <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="25" >
-                    <TextBlock Text="{Binding Path=Converter.Status}" />
+                <Border Grid.Row="1" Background="White" BorderThickness="0,1,0,1" Padding="8,0,0,0"
+                    BorderBrush="{Binding Path=Converter.HasError, Converter={StaticResource boolToColorBorderConverter}}" 
+                    Visibility="{Binding Path=Converter.IsCompleted, Converter={StaticResource boolToVisibilityConverter}}">
+                    <TextBlock TextAlignment="Center" FontSize="15" Foreground="Gray" Text="{Binding Path=Converter.Status}"></TextBlock>
+                </Border>
+                <StackPanel Grid.Row="2" VerticalAlignment="Center" Margin="25" >
+
+                    <TextBlock Text="{Binding Path=Converter.Status}" Visibility="{Binding Path=Converter.IsCompleted, Converter={StaticResource boolToInverseVisibilityConverter}}" />
                     <ProgressBar Name="progressBar1" Height="22"  Value="{Binding Path=Converter.Progress}" IsIndeterminate="False"  Grid.Row="1" />
                 </StackPanel>
             </Grid>

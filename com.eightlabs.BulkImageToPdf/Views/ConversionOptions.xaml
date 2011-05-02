@@ -3,20 +3,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:p="clr-namespace:com.eightlabs.BulkImageToPdf.Properties"
+             xmlns:pdf="clr-namespace:PdfSharp;assembly=PdfSharp-WPF"
+             xmlns:System="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignHeight="350" d:DesignWidth="525">
     <UserControl.Resources>
-        <DataTemplate x:Key="view_thumbnails" DataType="ViewBase">
-            <TextBlock VerticalAlignment="Center" TextAlignment="Left" Margin="10" >
-                <Border BorderBrush="#FFECECEC" BorderThickness="1">
-                    <Image Width="100" Source="{Binding Path=Image, Mode=OneWay}" RenderOptions.BitmapScalingMode="HighQuality">
-                    </Image>
-                </Border>
+        <ObjectDataProvider x:Key="PageSizes"
+            MethodName="GetValues" ObjectType="{x:Type System:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="pdf:PageSize"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
 
-            </TextBlock>
-
-        </DataTemplate>
-
+        <ObjectDataProvider x:Key="PageRotations"
+            MethodName="GetValues" ObjectType="{x:Type System:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="pdf:PageOrientation"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </UserControl.Resources>
 
 
@@ -24,7 +29,8 @@
         <DockPanel Margin="0,0,0,0" Width="Auto" Height="Auto">
             <Border DockPanel.Dock="Bottom" Margin="0,10,0,0" VerticalAlignment="Top" Height="Auto" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                 <DockPanel Margin="0,8,0,8" Width="Auto" Height="Auto" Background="{x:Null}">
-                    <Button IsCancel="True"  Height="30" Width="100"  Content="Convert" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button IsCancel="True"  Height="30" Width="100"  Content="Create Single PDF" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button IsCancel="True"  Height="30" Width="150"  Content="Create Multiple PDFs" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
                     <Button IsCancel="True"  Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
                 </DockPanel>
             </Border>
@@ -32,26 +38,49 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Border Grid.Row="0" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                     <TextBlock TextAlignment="Center" FontSize="25" Foreground="Gray">Options</TextBlock>
                 </Border>
 
-                <ListView HorizontalContentAlignment="Stretch" Name="lstFiles" Grid.Row="1"
-                             BorderThickness="0"  HorizontalAlignment="Stretch" Background="Transparent"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             SelectionMode="Single" ItemsSource="{Binding Path=ImageFilesList}"
-                             SelectedItem="{Binding Path=CurrentFile, Mode=TwoWay}" 
-                             IsSynchronizedWithCurrentItem="True"
-                             ItemTemplate="{StaticResource view_thumbnails}"/>
-                <StackPanel Grid.Row="2">
-                    <CheckBox>Auto Detect Paper Size</CheckBox>
-                    <ComboBox Text="PaperSize">
-                        
-                    </ComboBox>
-                </StackPanel>
+                <Grid Grid.Row="1" Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="28" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0" Content="Author:"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="Title:"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="Subject:"/>
+                    <Label Grid.Row="3" Grid.Column="0" Content="Keywords:"/>
+                    <TextBox Grid.Column="1" Grid.Row="0" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Author, Mode=TwoWay}" />
+                    <TextBox Grid.Column="1" Grid.Row="1" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Title, Mode=TwoWay}" />
+                    <TextBox Grid.Column="1" Grid.Row="2" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Subject, Mode=TwoWay}" />
+                    <TextBox Grid.Column="1" Grid.Row="3" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Keywords, Mode=TwoWay}" />
 
+                    <ComboBox Grid.Column="1" Grid.Row="4" Height="23" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Margin="3"
+                              ItemsSource="{Binding Source={StaticResource PageSizes}}" SelectedItem="{Binding Source={x:Static p:Settings.Default}, Path=PaperType, Mode=TwoWay}" />
+
+                    <ComboBox Grid.Column="1" Grid.Row="5" Height="23" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Margin="3"
+                              ItemsSource="{Binding Source={StaticResource PageRotations}}" SelectedItem="{Binding Source={x:Static p:Settings.Default}, Path=Rotation, Mode=TwoWay}" />
+
+                    <CheckBox Grid.Column="1" Grid.Row="6" Margin="3" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=ConvertToMonochrome, Mode=TwoWay}" Content="Convert pages to Monochrome"  Name="checkBox3"  >
+                        <CheckBox.ToolTip>
+                            Converts the processed images to black and white to make the resulting PDF smaller in size
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+
+                </Grid>
             </Grid>
 
         </DockPanel>

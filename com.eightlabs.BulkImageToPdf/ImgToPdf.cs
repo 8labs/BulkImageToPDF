@@ -29,10 +29,13 @@ namespace com.eightlabs.BulkImageToPdf
                 {
                     if (File.Exists(f)) //TODO more verification on what we're working on.
                     {
-                        BitmapSource bmp = GetImageFromFile(f);
-                        //TODO handle scaling here for better results/speed than the pdf lib scaling??
-                        //TODO convert to monochrome or otherwise compress?
-                        AddImagePage(doc, bmp); //add a page of the image
+                        List<BitmapSource> imgs = ImgToPdf.GetImagesFromFile(f);
+                        foreach (BitmapSource bmp in imgs)
+                        {
+                            //TODO handle scaling here for better results/speed than the pdf lib scaling??
+                            //TODO convert to monochrome or otherwise compress?
+                            AddImagePage(doc, bmp); //add a page of the image
+                        }
                     }
                 }
                 catch (Exception)
@@ -46,25 +49,33 @@ namespace com.eightlabs.BulkImageToPdf
             return doc;
         }
 
-        public static BitmapSource GetImageFromFile(string fileName)
+        /// <summary>
+        /// Returns a list of images in the file - (Usually just one, except for multi page tiffs)
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static List<BitmapSource> GetImagesFromFile(string fileName)
         {
-            BitmapImage bi = new BitmapImage();
-            // BitmapImage.UriSource must be in a BeginInit/EndInit block.
-            bi.BeginInit();
-            bi.UriSource = new Uri(fileName, UriKind.RelativeOrAbsolute);  //set the file...
-            bi.CacheOption = BitmapCacheOption.None;  //keeps the bitmap from caching in memory during processing.
-            bi.EndInit();
+            BitmapDecoder bd = BitmapDecoder.Create(
+                new Uri(fileName, UriKind.RelativeOrAbsolute),
+                BitmapCreateOptions.None,
+                BitmapCacheOption.None);
             
-            bi.Freeze();  //allows reading on all threads
+            List<BitmapSource> imgs = new List<BitmapSource>();
+            foreach (BitmapFrame frame in bd.Frames)
+            {               
+                frame.Freeze();  //allows reading on all threads
+                imgs.Add((BitmapSource)frame);
+            }
 
-            return bi;
+            return imgs;
         }
 
 
         public static void AddImagePage(PdfDocument doc, BitmapSource img)
         {
             PdfPage page = doc.AddPage();
-
+ 
             //TODO we need to figure out landscape handling - auto detect or what...
             //page.Rotate
 

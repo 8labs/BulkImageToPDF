@@ -9,6 +9,7 @@ using System.IO;
 using System.ComponentModel;
 using System.Windows.Threading;
 
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -93,6 +94,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
         /// <summary>
         /// Processes the files in the list
+        /// Any failure by any file will halt the entire conversion process
         /// </summary>
         private void ProcessFiles(List<IncomingFileViewModel> files, string outFile, BackgroundWorker worker)
         {
@@ -101,31 +103,65 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
             using (PdfDocument doc = new PdfDocument())
             {
-                //todo let the end user configure some of these
-                doc.Info.Title = "";
-                doc.Info.Author = "";
-                doc.Info.Subject = "";
+                //let the end user configure some of these
+                doc.Info.Title = Properties.Settings.Default.Title;
+                doc.Info.Author = Properties.Settings.Default.Author;
+                doc.Info.Subject = Properties.Settings.Default.Subject;
+                doc.Info.Keywords = Properties.Settings.Default.Keywords;
 
-                //TODO set some others here 
-                doc.Info.Elements.SetString("/Producer", "8labs Bulk Image To Pdf converter.");
-                doc.Info.Elements.SetString("/Creator", "8labs Bulk Image To Pdf converter.");
+                //Set some advertisments here... 
+                doc.Info.Elements.SetString("/Producer", "8labs Bulk Image To Pdf converter.  http://www.8labs.com");
+                doc.Info.Elements.SetString("/Creator", "8labs Bulk Image To Pdf converter. http://www.8labs.com");
 
-                int percent = 0;
-                int fileworth = 100 / files.Count;
-                //TODO any sorting, etc... or should happen prior to this function
+
+                float percent = 0;
+                float fileworth = 100F / files.Count;
+                //sorting will have already happened.. just process
                 foreach (IncomingFileViewModel f in files)
                 {
+                    //skip errored files that the user already knew about...
+                    if (!String.IsNullOrEmpty(f.Error)) { continue; }
+
                     if (worker.CancellationPending) return; //canceled - exit this
 
-                    //NOTE:  Any errors thrown here should end the conversion
-                    BitmapSource bmp = f.Image;
-                    //TODO handle page size, orientation, etc...
-                    //TODO handle scaling here for better results/speed than the pdf lib scaling??
-                    //TODO convert to monochrome or otherwise compress?
-                    ImgToPdf.AddImagePage(doc, bmp); //add a page of the image
+                    //handle multi page image files (multi frame tiffs)
+                    List<BitmapSource> imgs = ImgToPdf.GetImagesFromFile(f.FileName);
+                    foreach (BitmapSource bmp in imgs)
+                    {
+                        //create the new page with the appropriate paper type and rotation
+                        PdfPage page = doc.AddPage();
+                        page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
+                        //TODO auto detect landscape rotations..
+                        double ratio;
+                        if (Properties.Settings.Default.Rotation == PageOrientation.Landscape)
+                        {
+                            page.Rotate = 90;
+                            ratio = Math.Min(page.Height / bmp.Width, page.Width / bmp.Height);
+                        } else {
+                            ratio = Math.Min(page.Width / bmp.Width, page.Height / bmp.Height);
+                        }
 
-                    percent += fileworth;
-                    worker.ReportProgress(percent, "Processed file: " + Path.GetFileName(f.FileName));
+                        //handle scaling here for better results/speed than the pdf lib scaling (keep aspect ratio)
+                        Transform robotInDisguise = new ScaleTransform(ratio, ratio);
+                        BitmapSource optimus = new TransformedBitmap(bmp, robotInDisguise);
+
+                        //TODO convert to monochrome or otherwise compress?
+                        if (Properties.Settings.Default.ConvertToMonochrome)
+                        {
+                            optimus = new FormatConvertedBitmap(optimus, PixelFormats.BlackWhite, BitmapPalettes.BlackAndWhite, 0);
+                        }
+
+
+                        using (XGraphics gfx = XGraphics.FromPdfPage(page))
+                        using (XImage ximg = XImage.FromBitmapSource(optimus))
+                        {
+                            //draw the image full page onto the document (no margins)
+                            gfx.DrawImage(ximg, 0, 0, optimus.Width, optimus.Height);  //already scaled
+                        }
+                    }
+
+                    percent = percent + fileworth;
+                    worker.ReportProgress((int)percent, "Processed file: " + Path.GetFileName(f.FileName));
                 }
 
                 if (worker.CancellationPending) return; //canceled - exit this
@@ -183,7 +219,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                     {
                         //return to previous screen?
                         this.Status = "User Canceled";
-                        
+                        this.HasError = true;
                     }
 
                     if (args.Error != null)
@@ -196,8 +232,8 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                     {
                         this.Progress = 100;
                         this.Status = "Conversion complete.";
-                        this.IsCompleted = true;
                     }
+                    this.IsCompleted = true;
 
                 });
 

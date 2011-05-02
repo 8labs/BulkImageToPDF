@@ -11,25 +11,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using com.eightlabs.BulkImageToPdf.ViewModels;
 
 namespace com.eightlabs.BulkImageToPdf.Views
 {
     /// <summary>
-    /// Interaction logic for ProcessingFiles.xaml
+    /// Interaction logic for ChooseFiles.xaml
     /// </summary>
-    public partial class ProcessingFiles : UserControl
+    public partial class ChooseFiles : UserControl
     {
-        public ProcessingFiles()
+        public ChooseFiles()
         {
             InitializeComponent();
         }
-
-        private void btnCancel_Click(object sender, RoutedEventArgs e)
-        {
-            //how to handle cancel?
-            //((MainWindowViewModel) this.DataContext)
-        }
-
     }
 }

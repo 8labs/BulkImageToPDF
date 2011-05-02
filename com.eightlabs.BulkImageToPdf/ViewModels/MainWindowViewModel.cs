@@ -58,7 +58,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
         #region Private Methods
 
-        //comparison for the file view models
+        //comparison for the file view models sorting
         private static int CompareFileName(IncomingFileViewModel x, IncomingFileViewModel y)
         {
             return x.FileName.CompareTo(y.FileName);
@@ -80,17 +80,19 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                 //create a view model for handling these
                 IncomingFileViewModel fvm = new IncomingFileViewModel();
                 fvm.FileName = f;
+                ImageFilesList.Add(fvm);
                 try
                 {
-                    BitmapSource bmp = ImgToPdf.GetImageFromFile(f);
-                    fvm.Image = bmp;
-                    ImageFilesList.Add(fvm);
+                    //create a decoder for the image - tells us if this is a supported type
+                    BitmapDecoder bd = BitmapDecoder.Create(
+                        new Uri(f, UriKind.RelativeOrAbsolute),
+                        BitmapCreateOptions.None,
+                        BitmapCacheOption.None);  //just trash created - unused due to threading issues
                 }
                 catch (Exception ex)
                 {
                     //log the errors so we can view them in bulk
                     fvm.Error = ex.Message;
-                    BadFilesList.Add(fvm);
                 }
             }
 
