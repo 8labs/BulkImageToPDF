@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using com.eightlabs.BulkImageToPdf.ViewModels;
 
 namespace com.eightlabs.BulkImageToPdf.Views
 {
@@ -22,6 +23,16 @@ namespace com.eightlabs.BulkImageToPdf.Views
         public ChooseFiles()
         {
             InitializeComponent();
+        }
+
+        private void Convert_Click(object sender, RoutedEventArgs e)
+        {
+            ((ChooseFilesScreenViewModel)this.DataContext).Main.Screens.MoveCurrentToNext();
+        }
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            ((ChooseFilesScreenViewModel)this.DataContext).Main.Cancel();
         }
     }
 }

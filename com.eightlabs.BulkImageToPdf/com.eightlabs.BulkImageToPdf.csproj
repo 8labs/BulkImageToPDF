@@ -58,9 +58,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\ChooseFilesScreenViewModel.cs" />
     <Compile Include="ViewModels\ConversionViewModel.cs" />
+    <Compile Include="ViewModels\ConversionOptionsScreenViewModel.cs" />
+    <Compile Include="ViewModels\ProcessingFilesScreenViewModel.cs" />
+    <Compile Include="ViewModels\DropFilesScreenViewModel.cs" />
     <Compile Include="ViewModels\IncomingFileViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="ViewModels\ScreenBaseViewModel.cs" />
     <Compile Include="Views\ChooseFiles.xaml.cs">
       <DependentUpon>ChooseFiles.xaml</DependentUpon>
     </Compile>

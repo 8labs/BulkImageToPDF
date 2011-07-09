@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:p="clr-namespace:com.eightlabs.BulkImageToPdf.Properties"
              xmlns:pdf="clr-namespace:PdfSharp;assembly=PdfSharp-WPF"
+             xmlns:vm="clr-namespace:com.eightlabs.BulkImageToPdf.ViewModels"
              xmlns:System="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignHeight="350" d:DesignWidth="525">
@@ -19,7 +20,7 @@
         <ObjectDataProvider x:Key="PageRotations"
             MethodName="GetValues" ObjectType="{x:Type System:Enum}">
             <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="pdf:PageOrientation"/>
+                <x:Type TypeName="vm:Orientation"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
     </UserControl.Resources>
@@ -29,9 +30,9 @@
         <DockPanel Margin="0,0,0,0" Width="Auto" Height="Auto">
             <Border DockPanel.Dock="Bottom" Margin="0,10,0,0" VerticalAlignment="Top" Height="Auto" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                 <DockPanel Margin="0,8,0,8" Width="Auto" Height="Auto" Background="{x:Null}">
-                    <Button IsCancel="True"  Height="30" Width="100"  Content="Create Single PDF" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button IsCancel="True"  Height="30" Width="100"  Content="Create Single PDF" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="Convert_Click"/>
                     <Button IsCancel="True"  Height="30" Width="150"  Content="Create Multiple PDFs" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
-                    <Button IsCancel="True"  Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button IsCancel="True"  Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="Cancel_Click" />
                 </DockPanel>
             </Border>
             <Grid Background="White" Width="Auto" Height="Auto" Margin="0,-1,0,0">

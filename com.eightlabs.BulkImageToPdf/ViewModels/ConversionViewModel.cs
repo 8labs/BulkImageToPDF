@@ -18,6 +18,13 @@ using PdfSharp.Pdf.IO;
 
 namespace com.eightlabs.BulkImageToPdf.ViewModels
 {
+    public enum Orientation
+    {
+        Landscape,
+        Portrait,
+        AutoSelect
+    }
+
     /// <summary>
     /// Simple class for wrapping the conversion process and display status
     /// </summary>
@@ -28,9 +35,13 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
         private BackgroundWorker currentWorker;
 
+        private Dictionary<PageSize, double> _paperRatios;
+
         #endregion
 
         #region Public Variables
+
+
 
         private int _progress;
         /// <summary>
@@ -93,6 +104,41 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         #region Private Methods
 
         /// <summary>
+        /// determines the paper size from the passed image size
+        /// </summary>
+        /// <param name="widthToHeight"></param>
+        /// <returns></returns>
+        private void SetPageSizeByRatio(PdfPage page, double width, double height)
+        {
+            //collect the ratios if they haven't been already
+            if (_paperRatios == null)
+            {
+                _paperRatios = new Dictionary<PageSize, double>();
+                foreach (PageSize p in Enum.GetValues(typeof(PageSize)))
+                {
+                    if (p != PageSize.Undefined)
+                    {
+                        page.Size = p;
+                        _paperRatios.Add(p, page.Width.Value / page.Height.Value);
+                    }
+                }
+            }
+
+            //determine the best
+            PageSize best = PageSize.Letter;
+            double ratio = width/height;
+            foreach (KeyValuePair<PageSize, double> kvp in _paperRatios)
+            {
+                //determine if each is a closer match than the default
+                if (kvp.Value - ratio >= 0 && kvp.Value - ratio < _paperRatios[best] - ratio)
+                    best = kvp.Key;
+            }
+
+            page.Size = best;
+
+        }
+
+        /// <summary>
         /// Processes the files in the list
         /// Any failure by any file will halt the entire conversion process
         /// </summary>
@@ -130,27 +176,51 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                     {
                         //create the new page with the appropriate paper type and rotation
                         PdfPage page = doc.AddPage();
-                        page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
-                        //TODO auto detect landscape rotations..
+
+                        //get the orientation
+                        Orientation o = Properties.Settings.Default.Rotation;
+                        if (o == Orientation.AutoSelect)  //auto select based off image
+                        {
+                            if (bmp.Height / bmp.Width > bmp.Width / bmp.Height)
+                                o = Orientation.Portrait;
+                            else
+                                o = Orientation.Landscape;
+                        }
+
                         double ratio;
-                        if (Properties.Settings.Default.Rotation == PageOrientation.Landscape)
+                        if (o == Orientation.Landscape)
                         {
                             page.Rotate = 90;
-                            ratio = Math.Min(page.Height / bmp.Width, page.Width / bmp.Height);
-                        } else {
-                            ratio = Math.Min(page.Width / bmp.Width, page.Height / bmp.Height);
+                            
+                            //auto detect paper size on undefined
+                            if (Properties.Settings.Default.PaperType == PageSize.Undefined)
+                                SetPageSizeByRatio(page, bmp.Height, bmp.Width);
+                            else
+                                page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
+
+                            ratio = Math.Min(page.Height.Value / bmp.Width, page.Width.Value / bmp.Height);
+                        }
+                        else
+                        {
+                            //auto detect paper size on undefined
+                            if (Properties.Settings.Default.PaperType == PageSize.Undefined)
+                                SetPageSizeByRatio(page, bmp.Width, bmp.Height);
+                            else
+                                page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
+
+                            ratio = Math.Min(page.Width.Value / bmp.Width, page.Height.Value / bmp.Height);
+                        }
+
+                        //convert to monochrome or otherwise compress prior to resizing
+                        BitmapSource converted = bmp;
+                        if (Properties.Settings.Default.ConvertToMonochrome)
+                        {
+                            converted = new FormatConvertedBitmap(converted, PixelFormats.BlackWhite, BitmapPalettes.BlackAndWhite, 0);
                         }
 
                         //handle scaling here for better results/speed than the pdf lib scaling (keep aspect ratio)
                         Transform robotInDisguise = new ScaleTransform(ratio, ratio);
-                        BitmapSource optimus = new TransformedBitmap(bmp, robotInDisguise);
-
-                        //TODO convert to monochrome or otherwise compress?
-                        if (Properties.Settings.Default.ConvertToMonochrome)
-                        {
-                            optimus = new FormatConvertedBitmap(optimus, PixelFormats.BlackWhite, BitmapPalettes.BlackAndWhite, 0);
-                        }
-
+                        BitmapSource optimus = new TransformedBitmap(converted, robotInDisguise);
 
                         using (XGraphics gfx = XGraphics.FromPdfPage(page))
                         using (XImage ximg = XImage.FromBitmapSource(optimus))
@@ -184,6 +254,13 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         #endregion
 
         #region Public Methods
+
+        public void Reset()
+        {
+            this.Status = "";
+            this.Progress = 0;
+            this.HasError = false;
+        }
 
         /// <summary>
         /// Cancels any current processing

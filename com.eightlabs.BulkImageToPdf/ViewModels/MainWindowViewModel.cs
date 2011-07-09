@@ -7,7 +7,7 @@ using System.Text;
 using com.eightlabs.WPFCommon.ViewModels;
 using System.Collections.ObjectModel;
 using System.IO;
-
+using System.Windows.Data;
 using System.ComponentModel;
 using System.Windows.Threading;
 
@@ -26,9 +26,20 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             this.ImageFilesList = new List<IncomingFileViewModel>();
             this.BadFilesList = new List<IncomingFileViewModel>();
             this.Converter = new ConversionViewModel();
+
+            //setup the screens
+            List<ScreenBaseViewModel> screens = new List<ScreenBaseViewModel>();
+            screens.Add(new DropFilesScreenViewModel(this));
+            //screens.Add(new ChooseFilesScreenViewModel(this));
+            screens.Add(new ConversionOptionsScreenViewModel(this));
+            screens.Add(new ProcessingFilesScreenViewModel(this));
+
+            this.Screens = new CollectionView(screens);
+            this.Screens.MoveCurrentToFirst();
         }
 
         #region Private Variables
+
 
         #endregion
 
@@ -54,6 +65,11 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         /// </summary>
         public IncomingFileViewModel CurrentFile { get; set; }
 
+        /// <summary>
+        /// The currently displayed screen vm (contains helpers for next/previous)
+        /// </summary>
+        public CollectionView Screens { get; set; }
+
         #endregion
 
         #region Private Methods
@@ -68,7 +84,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
         #region Public Methods
 
-        /// <summary>
+          /// <summary>
         /// Add files to the list, parsing out only ones we use.  Sort when complete
         /// </summary>
         /// <param name="files"></param>
@@ -108,6 +124,11 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             this.Converter.CancelProcessing();
         }
 
+        public void SaveSettings()
+        {
+            BulkImageToPdf.Properties.Settings.Default.Save();
+        }
+
         /// <summary>
         /// Clears any loaded or failed files
         /// </summary>
@@ -117,6 +138,13 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             this.ImageFilesList.Clear();
         }
 
+        public void Cancel()
+        {
+            this.ClearFiles();
+            this.Converter.Reset();
+            this.Screens.MoveCurrentToFirst();
+        }
+
         /// <summary>
         /// Process the files in the list on a background worker...
         /// </summary>
@@ -124,6 +152,25 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         public void ProcessFilesAsync(string outFile)
         {
             this.Converter.ProcessFilesAsync(this.ImageFilesList, outFile);
+        }
+
+        public void Convert()
+        {
+            // Configure open file dialog box
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            dlg.FileName = "Document"; // Default file name
+            dlg.DefaultExt = ".pdf"; // Default file extension
+            dlg.Filter = "PDF documents (.pdf)|*.pdf"; // Filter files by extension
+
+            // Show open file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
+            {
+                // Open document
+                this.ProcessFilesAsync(dlg.FileName);
+            }
         }
 
 

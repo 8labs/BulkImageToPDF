@@ -5,11 +5,11 @@
     <Setting Name="PaperType" Type="PdfSharp.PageSize" Scope="User">
       <Value Profile="(Default)">Letter</Value>
     </Setting>
-    <Setting Name="Rotation" Type="PdfSharp.PageOrientation" Scope="User">
-      <Value Profile="(Default)">Landscape</Value>
+    <Setting Name="Rotation" Type="com.eightlabs.BulkImageToPdf.ViewModels.Orientation" Scope="User">
+      <Value Profile="(Default)">Portrait</Value>
     </Setting>
     <Setting Name="ConvertToMonochrome" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="Author" Type="System.String" Scope="User">
       <Value Profile="(Default)">8labs</Value>

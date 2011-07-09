@@ -27,8 +27,15 @@ namespace com.eightlabs.BulkImageToPdf.Views
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
         {
-            //how to handle cancel?
-            //((MainWindowViewModel) this.DataContext)
+
+            ((ProcessingFilesScreenViewModel)this.DataContext).Main.CancelProcessing();
+            ((ProcessingFilesScreenViewModel)this.DataContext).Main.Screens.MoveCurrentToPrevious();
+        }
+
+        private void Cancel_All_Click(object sender, RoutedEventArgs e)
+        {
+            ((ProcessingFilesScreenViewModel)this.DataContext).Main.CancelProcessing();
+            ((ProcessingFilesScreenViewModel)this.DataContext).Main.Cancel();
         }
 
     }

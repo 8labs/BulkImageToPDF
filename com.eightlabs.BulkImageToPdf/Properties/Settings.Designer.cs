@@ -37,10 +37,10 @@ namespace com.eightlabs.BulkImageToPdf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Landscape")]
-        public global::PdfSharp.PageOrientation Rotation {
+        [global::System.Configuration.DefaultSettingValueAttribute("Portrait")]
+        public global::com.eightlabs.BulkImageToPdf.ViewModels.Orientation Rotation {
             get {
-                return ((global::PdfSharp.PageOrientation)(this["Rotation"]));
+                return ((global::com.eightlabs.BulkImageToPdf.ViewModels.Orientation)(this["Rotation"]));
             }
             set {
                 this["Rotation"] = value;
@@ -49,7 +49,7 @@ namespace com.eightlabs.BulkImageToPdf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool ConvertToMonochrome {
             get {
                 return ((bool)(this["ConvertToMonochrome"]));

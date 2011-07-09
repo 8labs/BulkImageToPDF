@@ -1,22 +1,39 @@
 ﻿<Window x:Class="com.eightlabs.BulkImageToPdf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:converters="clr-namespace:com.eightlabs.WPFCommon.Converters;assembly=com.eightlabs.WPFCommon"
+        xmlns:converter="clr-namespace:com.eightlabs.WPFCommon.Converters;assembly=com.eightlabs.WPFCommon"
         xmlns:local="clr-namespace:com.eightlabs.BulkImageToPdf"
-        xmlns:views="clr-namespace:com.eightlabs.BulkImageToPdf.Views"
-        Title="8labs Bulk Image to PDF Converter" Height="350" Width="525" WindowStyle="SingleBorderWindow" SnapsToDevicePixels="True" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300">
+        xmlns:view="clr-namespace:com.eightlabs.BulkImageToPdf.Views"
+        xmlns:vm="clr-namespace:com.eightlabs.BulkImageToPdf.ViewModels"
+        Title="8labs Bulk Image to PDF Converter" Height="350" Width="525" WindowStyle="SingleBorderWindow" UseLayoutRounding="True" SnapsToDevicePixels="True" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300">
     <Window.Resources>
-        <converters:InverseBooleanConverter x:Key="inverseBooleanConverter" />
-        <converters:BooleanVisibilityConverter x:Key="booleanVisibilityConverter" />
-
-        <BitmapImage x:Key="DragDrop" UriSource="/Media/DragDrop.png" />
-
+        <converter:InverseBooleanConverter x:Key="inverseBooleanConverter" />
+        <converter:BooleanVisibilityConverter x:Key="booleanVisibilityConverter" />
     </Window.Resources>
 
     <Grid>
-        <views:DropFiles x:Name="dropView" AllowDrop="True" Drop="Grid_Drop" IsVisibleChanged="view_IsVisibleChanged" />
-        <views:ConversionOptions x:Name="optionsView"  Visibility="Collapsed" IsVisibleChanged="view_IsVisibleChanged" />
-        <views:ProcessingFiles x:Name="processingView"  Visibility="Collapsed" IsVisibleChanged="view_IsVisibleChanged" />
+  
+
+        <ContentControl Content="{Binding Path=Screens.CurrentItem}" Name="content" DataContextChanged="view_IsVisibleChanged">
+            <ContentControl.Resources>
+                <DataTemplate DataType="{x:Type vm:DropFilesScreenViewModel}">
+                    <view:DropFiles AllowDrop="True" Drop="Grid_Drop"/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:ChooseFilesScreenViewModel}">
+                    <view:ChooseFiles />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:ConversionOptionsScreenViewModel}">
+                    <view:ConversionOptions />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:ProcessingFilesScreenViewModel}">
+                    <view:ProcessingFiles />
+                </DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
+
+
+
+
 
     </Grid>
 

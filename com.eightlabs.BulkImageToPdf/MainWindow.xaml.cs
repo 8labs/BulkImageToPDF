@@ -30,11 +30,36 @@ namespace com.eightlabs.BulkImageToPdf
 
         public MainWindow()
         {
-            InitializeComponent();
             vm = new MainWindowViewModel();
             DataContext = vm;
 
+            InitializeComponent();
 
+            vm.Screens.CurrentChanged += new EventHandler(Screens_CurrentChanged);
+
+        }
+
+        void Screens_CurrentChanged(object sender, EventArgs e)
+        {
+            //fade it in
+            // Create a storyboard to contain the animations.
+            Storyboard storyboard = new Storyboard();
+            TimeSpan duration = new TimeSpan(0, 0, 0, 0, 250);
+
+            // Create a DoubleAnimation to fade the not selected option control
+            DoubleAnimation animation = new DoubleAnimation();
+
+            animation.From = 0.0;
+            animation.To = 1.0;
+            animation.Duration = new Duration(duration);
+            // Configure the animation to target de property Opacity
+            Storyboard.SetTargetName(animation, this.content.Name);
+            Storyboard.SetTargetProperty(animation, new PropertyPath(Control.OpacityProperty));
+            // Add the animation to the storyboard
+            storyboard.Children.Add(animation);
+
+            // Begin the storyboard
+            storyboard.Begin(this);
         }
 
       
@@ -48,30 +73,7 @@ namespace com.eightlabs.BulkImageToPdf
                 {
                     this.vm.AddFiles(files);
 
-
-
-                    // Configure open file dialog box
-                    Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
-                    dlg.FileName = "Document"; // Default file name
-                    dlg.DefaultExt = ".pdf"; // Default file extension
-                    dlg.Filter = "PDF documents (.pdf)|*.pdf"; // Filter files by extension
-
-                    // Show open file dialog box
-                    Nullable<bool> result = dlg.ShowDialog();
-
-                    // Process open file dialog box results
-                    if (result == true)
-                    {
-                        // Open document
-                        this.vm.ProcessFilesAsync(dlg.FileName);
-                    }
-
-                    this.dropView.Visibility = System.Windows.Visibility.Collapsed;
-
-                    //this.optionsView.Visibility = System.Windows.Visibility.Visible;
-
-                    this.processingView.Visibility = System.Windows.Visibility.Visible;
-
+                    this.vm.Screens.MoveCurrentToNext();
                 }
 
             }
