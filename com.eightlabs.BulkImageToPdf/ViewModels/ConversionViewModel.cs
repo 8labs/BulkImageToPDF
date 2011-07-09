@@ -5,7 +5,7 @@ using System.Text;
 using com.eightlabs.WPFCommon.ViewModels;
 using System.Collections.ObjectModel;
 using System.IO;
-
+using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Threading;
 using System.Threading.Tasks;
@@ -178,6 +178,10 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             return String.Join(Path.DirectorySeparatorChar.ToString(), rootPath.ToArray());
         }
 
+        /// <summary>
+        /// Sets the author, title, etc... for the document
+        /// </summary>
+        /// <param name="doc"></param>
         private void SetDocumentMeta(PdfDocument doc)
         {
             //let the end user configure some of these
@@ -223,7 +227,10 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
                     if (worker.CancellationPending) loopState.Break(); //canceled 
 
-                    this.AddFileToDoc(f, doc);
+                    if (i > 4)
+                        this.AddFileToDoc(f, doc, true);
+                    else
+                        this.AddFileToDoc(f, doc, false);
 
                     if (worker.CancellationPending) loopState.Break(); //canceled 
 
@@ -277,14 +284,19 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                 float percent = 0;
                 float fileworth = 100F / files.Count;
                 //sorting will have already happened.. just process
-                foreach (IncomingFileViewModel f in files)
+                for (int i = 0; i < files.Count; i++)
                 {
+                    IncomingFileViewModel f = files[i];
+
                     //skip errored files that the user already knew about...
                     if (!String.IsNullOrEmpty(f.Error)) { continue; }
 
                     if (worker.CancellationPending) return; //canceled - exit this
 
-                    this.AddFileToDoc(f, doc);
+                    if (i > 4)
+                        this.AddFileToDoc(f, doc, true);
+                    else
+                        this.AddFileToDoc(f, doc, false);
 
                     percent = percent + fileworth;
                     worker.ReportProgress((int)percent, "Processed file: " + Path.GetFileName(f.Info.Name));
@@ -308,12 +320,61 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         }
 
         /// <summary>
+        /// Simple watermark function
+        /// http://www.pdfsharp.net/wiki/Watermark-sample.ashx
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="watermark"></param>
+        /// <param name="font"></param>
+        [Conditional("TRIAL")]
+        public void AddWaterMark(PdfPage page, string watermark, XFont font)
+        {
+
+            // Get an XGraphics object for drawing beneath the existing content
+            using (XGraphics gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append))
+            {
+
+                // Get the size (in point) of the text
+                XSize size = gfx.MeasureString(watermark, font);
+
+                // Define a rotation transformation at the center of the page
+                double w = page.Width;
+                double h = page.Height;
+                if (page.Rotate == 90)
+                {
+                    w = page.Height;
+                    h = page.Width;
+                }
+
+                gfx.TranslateTransform(w / 2, h / 2);
+                gfx.RotateTransform(-Math.Atan(h / w) * 180 / Math.PI);
+                gfx.TranslateTransform(-w / 2, -h / 2);
+
+                // Create a graphical path
+                XGraphicsPath path = new XGraphicsPath();
+
+                // Add the text to the path
+                path.AddString(watermark, font.FontFamily, XFontStyle.BoldItalic, 48,
+                  new XPoint((w - size.Width) / 2, (h - size.Height) / 2),
+                  XStringFormats.Default);
+
+                // Create a dimmed red pen and brush
+                XPen pen = new XPen(XColor.FromArgb(50, 0, 0, 0), 1);
+                XBrush brush = new XSolidBrush(XColor.FromArgb(128, 201, 235, 143));
+
+                // Stroke the outline of the path
+                gfx.DrawPath(pen, brush, path);
+            }
+
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="files"></param>
         /// <param name="doc"></param>
         /// <param name="worker"></param>
-        private void AddFileToDoc(IncomingFileViewModel file, PdfDocument doc)
+        private void AddFileToDoc(IncomingFileViewModel file, PdfDocument doc, bool watermark)
         {
 
             //handle multi page image files (multi frame tiffs)
@@ -368,12 +429,23 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                 Transform robotInDisguise = new ScaleTransform(ratio, ratio);
                 BitmapSource optimus = new TransformedBitmap(converted, robotInDisguise);
 
+                if (watermark)
+                {
+                    this.AddWaterMark(page, "http://www.8labs.com", new XFont("Arial", 48));
+                }
+
                 using (XGraphics gfx = XGraphics.FromPdfPage(page))
                 using (XImage ximg = XImage.FromBitmapSource(optimus))
                 {
                     //draw the image full page onto the document (no margins)
                     gfx.DrawImage(ximg, 0, 0, optimus.Width, optimus.Height);  //already scaled
                 }
+
+                if (watermark)
+                {
+                    this.AddWaterMark(page, "http://www.8labs.com", new XFont("Arial", 48));
+                }
+
             }
         }
 
