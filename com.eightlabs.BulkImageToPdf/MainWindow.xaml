@@ -5,7 +5,7 @@
         xmlns:local="clr-namespace:com.eightlabs.BulkImageToPdf"
         xmlns:view="clr-namespace:com.eightlabs.BulkImageToPdf.Views"
         xmlns:vm="clr-namespace:com.eightlabs.BulkImageToPdf.ViewModels"
-        Title="8labs Bulk Image to PDF Converter" Height="350" Width="525" WindowStyle="SingleBorderWindow" UseLayoutRounding="True" SnapsToDevicePixels="True" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300">
+        Title="8labs Bulk Image to PDF Converter" MinHeight="350" Height="350" MinWidth="525" Width="525" WindowStyle="SingleBorderWindow" UseLayoutRounding="True" SnapsToDevicePixels="True" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <converter:InverseBooleanConverter x:Key="inverseBooleanConverter" />
         <converter:BooleanVisibilityConverter x:Key="booleanVisibilityConverter" />

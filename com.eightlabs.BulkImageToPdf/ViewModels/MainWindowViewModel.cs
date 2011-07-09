@@ -77,7 +77,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         //comparison for the file view models sorting
         private static int CompareFileName(IncomingFileViewModel x, IncomingFileViewModel y)
         {
-            return x.FileName.CompareTo(y.FileName);
+            return x.Info.FullName.CompareTo(y.Info.FullName);
         }
 
         #endregion
@@ -93,23 +93,21 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             //let the processor handle it for now...
             foreach (string f in files)
             {
-                //create a view model for handling these
-                IncomingFileViewModel fvm = new IncomingFileViewModel();
-                fvm.FileName = f;
-                ImageFilesList.Add(fvm);
-                try
+                //if it's a folder then get the contents (including sub dirs)  (Just grab them all...)
+                if (Directory.Exists(f))
                 {
-                    //create a decoder for the image - tells us if this is a supported type
-                    BitmapDecoder bd = BitmapDecoder.Create(
-                        new Uri(f, UriKind.RelativeOrAbsolute),
-                        BitmapCreateOptions.None,
-                        BitmapCacheOption.None);  //just trash created - unused due to threading issues
+                    foreach (string dFile in Directory.GetFiles(f, "*.*", SearchOption.AllDirectories)) 
+                    {
+                        ImageFilesList.Add(new IncomingFileViewModel(dFile));
+                    }
                 }
-                catch (Exception ex)
+                //should be a file... 
+                else
                 {
-                    //log the errors so we can view them in bulk
-                    fvm.Error = ex.Message;
+                    //create a view model for handling these
+                    ImageFilesList.Add(new IncomingFileViewModel(f));
                 }
+
             }
 
             //sort the list
@@ -149,27 +147,41 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         /// Process the files in the list on a background worker...
         /// </summary>
         /// <param name="outFile"></param>
-        public void ProcessFilesAsync(string outFile)
+        public void ProcessFilesAsync(string outFile, string outFolder)
         {
-            this.Converter.ProcessFilesAsync(this.ImageFilesList, outFile);
+            this.Converter.ProcessFilesAsync(this.ImageFilesList, outFile, outFolder);
+        }
+
+        public void ConvertMultiple()
+        {
+            System.Windows.Forms.FolderBrowserDialog dlg = new System.Windows.Forms.FolderBrowserDialog();
+
+            dlg.Description = "Select folder for output";
+
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                this.Screens.MoveCurrentToNext();
+                //create documents in folder - no file name
+                this.ProcessFilesAsync(null, dlg.SelectedPath);
+            }
+
         }
 
         public void Convert()
         {
             // Configure open file dialog box
-            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
+
             dlg.FileName = "Document"; // Default file name
             dlg.DefaultExt = ".pdf"; // Default file extension
             dlg.Filter = "PDF documents (.pdf)|*.pdf"; // Filter files by extension
 
-            // Show open file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
-
             // Process open file dialog box results
-            if (result == true)
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                // Open document
-                this.ProcessFilesAsync(dlg.FileName);
+                this.Screens.MoveCurrentToNext();
+                // create one document, no folder path
+                this.ProcessFilesAsync(dlg.FileName, null);
             }
         }
 

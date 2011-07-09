@@ -85,7 +85,7 @@ namespace com.eightlabs.BulkImageToPdf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://www.8labs.com")]
         public string Subject {
             get {
                 return ((string)(this["Subject"]));
@@ -97,13 +97,25 @@ namespace com.eightlabs.BulkImageToPdf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Image to PDF Conversion")]
         public string Keywords {
             get {
                 return ((string)(this["Keywords"]));
             }
             set {
                 this["Keywords"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool RetainFolderStructure {
+            get {
+                return ((bool)(this["RetainFolderStructure"]));
+            }
+            set {
+                this["RetainFolderStructure"] = value;
             }
         }
     }

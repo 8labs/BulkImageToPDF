@@ -8,6 +8,7 @@ using System.IO;
 
 using System.ComponentModel;
 using System.Windows.Threading;
+using System.Threading.Tasks;
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -30,6 +31,21 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
     /// </summary>
     public class ConversionViewModel : ViewModelBase
     {
+        public ConversionViewModel()
+        {
+            //collect the ratios 
+            PdfPage page = new PdfPage();
+            _paperRatios = new Dictionary<PageSize, double>();
+            foreach (PageSize p in Enum.GetValues(typeof(PageSize)))
+            {
+                if (p != PageSize.Undefined)
+                {
+                    page.Size = p;
+                    _paperRatios.Add(p, page.Width.Value / page.Height.Value);
+                }
+            }
+        }
+
 
         #region Private Variables
 
@@ -110,23 +126,9 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         /// <returns></returns>
         private void SetPageSizeByRatio(PdfPage page, double width, double height)
         {
-            //collect the ratios if they haven't been already
-            if (_paperRatios == null)
-            {
-                _paperRatios = new Dictionary<PageSize, double>();
-                foreach (PageSize p in Enum.GetValues(typeof(PageSize)))
-                {
-                    if (p != PageSize.Undefined)
-                    {
-                        page.Size = p;
-                        _paperRatios.Add(p, page.Width.Value / page.Height.Value);
-                    }
-                }
-            }
-
             //determine the best
             PageSize best = PageSize.Letter;
-            double ratio = width/height;
+            double ratio = width / height;
             foreach (KeyValuePair<PageSize, double> kvp in _paperRatios)
             {
                 //determine if each is a closer match than the default
@@ -139,26 +141,138 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         }
 
         /// <summary>
+        /// Gets the root path of a group of files 
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        private static string FindRootFolder(List<IncomingFileViewModel> files)
+        {
+
+            List<string> rootPath = null;
+
+            foreach (IncomingFileViewModel f in files)
+            {
+                string[] thisPath = Path.GetFullPath(f.Info.FullName).Split(Path.DirectorySeparatorChar);
+                if (rootPath == null)
+                {
+                    rootPath = new List<string>(thisPath);
+                }
+                else
+                {
+                    List<string> newRoot = new List<string>();
+                    for (int x = 0; x < Math.Min(rootPath.Count, thisPath.Length); x++)
+                    {
+                        if (rootPath[x] == thisPath[x])
+                            newRoot.Add(rootPath[x]);
+                        else
+                            break;
+
+                    }
+
+                    rootPath = newRoot;
+
+                }
+
+            }
+
+            return String.Join(Path.DirectorySeparatorChar.ToString(), rootPath.ToArray());
+        }
+
+        private void SetDocumentMeta(PdfDocument doc)
+        {
+            //let the end user configure some of these
+            doc.Info.Title = Properties.Settings.Default.Title;
+            doc.Info.Author = Properties.Settings.Default.Author;
+            doc.Info.Subject = Properties.Settings.Default.Subject;
+            doc.Info.Keywords = Properties.Settings.Default.Keywords;
+
+            //Set some advertisments here... 
+            doc.Info.Elements.SetString("/Producer", "8labs Bulk Image To Pdf converter.  http://www.8labs.com");
+            doc.Info.Elements.SetString("/Creator", "8labs Bulk Image To Pdf converter. http://www.8labs.com");
+        }
+
+        /// <summary>
+        /// Processes the files into individual PDFs
+        /// Similar logic to the single pdf
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="outFolder"></param>
+        /// <param name="worker"></param>
+        private void ProcessFilesMultiPdfs(List<IncomingFileViewModel> files, string outFolder, BackgroundWorker worker)
+        {
+            worker.ReportProgress(0, "Starting conversion...");
+
+            //determine the root folder first
+            string rootFolder = FindRootFolder(files);
+
+            float percent = 0;
+            float fileworth = 100F / files.Count;
+
+            //sorting will have already happened.. just process
+            //and because we're crazy - process them using the Parallel framework
+            Parallel.For(0, files.Count, (i, loopState) =>
+            {
+                IncomingFileViewModel f = files[i];
+                using (PdfDocument doc = new PdfDocument())
+                {
+                    //set the author, title, etc...
+                    this.SetDocumentMeta(doc);
+
+                    //skip errored files that the user already knew about...
+                    if (!String.IsNullOrEmpty(f.Error)) { return; }
+
+                    if (worker.CancellationPending) loopState.Break(); //canceled 
+
+                    this.AddFileToDoc(f, doc);
+
+                    if (worker.CancellationPending) loopState.Break(); //canceled 
+
+                    if (doc.PageCount > 0)
+                    {
+                        //figure out any sub folder handling (remove the root folder, trim any extra slashes, and remove any colons if it has drive letters)
+                        string newFolder = "";
+                        if (Properties.Settings.Default.RetainFolderStructure)  //only if we're retaining
+                            newFolder = f.Info.Directory.FullName.Substring(rootFolder.Length).Trim(Path.DirectorySeparatorChar).Replace(":", "");
+
+                        //combine it with the outFolder
+                        newFolder = Path.Combine(
+                            outFolder,
+                            newFolder);
+
+                        //create the full folder path
+                        Directory.CreateDirectory(newFolder);
+
+                        //figure out where the next extension will be.
+                        int ext = f.Info.Name.LastIndexOf('.');
+                        ext = ext > -1 ? ext : f.Info.Name.Length;  //make sure it had an extension already...
+                        string newFileName = f.Info.Name.Substring(0, ext) + ".pdf";
+
+                        //save it out...
+                        doc.Save(Path.Combine(newFolder, newFileName));
+                    }
+
+                    percent = percent + fileworth;
+                    worker.ReportProgress((int)percent, "Processed file: " + Path.GetFileName(f.Info.Name));
+
+                }
+            });
+
+            worker.ReportProgress(100, "Conversion Complete");
+        }
+
+        /// <summary>
         /// Processes the files in the list
         /// Any failure by any file will halt the entire conversion process
         /// </summary>
-        private void ProcessFiles(List<IncomingFileViewModel> files, string outFile, BackgroundWorker worker)
+        private void ProcessFilesSinglePDF(List<IncomingFileViewModel> files, string outFile, BackgroundWorker worker)
         {
 
             worker.ReportProgress(0, "Starting conversion...");
 
             using (PdfDocument doc = new PdfDocument())
             {
-                //let the end user configure some of these
-                doc.Info.Title = Properties.Settings.Default.Title;
-                doc.Info.Author = Properties.Settings.Default.Author;
-                doc.Info.Subject = Properties.Settings.Default.Subject;
-                doc.Info.Keywords = Properties.Settings.Default.Keywords;
-
-                //Set some advertisments here... 
-                doc.Info.Elements.SetString("/Producer", "8labs Bulk Image To Pdf converter.  http://www.8labs.com");
-                doc.Info.Elements.SetString("/Creator", "8labs Bulk Image To Pdf converter. http://www.8labs.com");
-
+                //set the author, title, etc...
+                this.SetDocumentMeta(doc);
 
                 float percent = 0;
                 float fileworth = 100F / files.Count;
@@ -170,68 +284,10 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
 
                     if (worker.CancellationPending) return; //canceled - exit this
 
-                    //handle multi page image files (multi frame tiffs)
-                    List<BitmapSource> imgs = ImgToPdf.GetImagesFromFile(f.FileName);
-                    foreach (BitmapSource bmp in imgs)
-                    {
-                        //create the new page with the appropriate paper type and rotation
-                        PdfPage page = doc.AddPage();
-
-                        //get the orientation
-                        Orientation o = Properties.Settings.Default.Rotation;
-                        if (o == Orientation.AutoSelect)  //auto select based off image
-                        {
-                            if (bmp.Height / bmp.Width > bmp.Width / bmp.Height)
-                                o = Orientation.Portrait;
-                            else
-                                o = Orientation.Landscape;
-                        }
-
-                        double ratio;
-                        if (o == Orientation.Landscape)
-                        {
-                            page.Rotate = 90;
-                            
-                            //auto detect paper size on undefined
-                            if (Properties.Settings.Default.PaperType == PageSize.Undefined)
-                                SetPageSizeByRatio(page, bmp.Height, bmp.Width);
-                            else
-                                page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
-
-                            ratio = Math.Min(page.Height.Value / bmp.Width, page.Width.Value / bmp.Height);
-                        }
-                        else
-                        {
-                            //auto detect paper size on undefined
-                            if (Properties.Settings.Default.PaperType == PageSize.Undefined)
-                                SetPageSizeByRatio(page, bmp.Width, bmp.Height);
-                            else
-                                page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
-
-                            ratio = Math.Min(page.Width.Value / bmp.Width, page.Height.Value / bmp.Height);
-                        }
-
-                        //convert to monochrome or otherwise compress prior to resizing
-                        BitmapSource converted = bmp;
-                        if (Properties.Settings.Default.ConvertToMonochrome)
-                        {
-                            converted = new FormatConvertedBitmap(converted, PixelFormats.BlackWhite, BitmapPalettes.BlackAndWhite, 0);
-                        }
-
-                        //handle scaling here for better results/speed than the pdf lib scaling (keep aspect ratio)
-                        Transform robotInDisguise = new ScaleTransform(ratio, ratio);
-                        BitmapSource optimus = new TransformedBitmap(converted, robotInDisguise);
-
-                        using (XGraphics gfx = XGraphics.FromPdfPage(page))
-                        using (XImage ximg = XImage.FromBitmapSource(optimus))
-                        {
-                            //draw the image full page onto the document (no margins)
-                            gfx.DrawImage(ximg, 0, 0, optimus.Width, optimus.Height);  //already scaled
-                        }
-                    }
+                    this.AddFileToDoc(f, doc);
 
                     percent = percent + fileworth;
-                    worker.ReportProgress((int)percent, "Processed file: " + Path.GetFileName(f.FileName));
+                    worker.ReportProgress((int)percent, "Processed file: " + Path.GetFileName(f.Info.Name));
                 }
 
                 if (worker.CancellationPending) return; //canceled - exit this
@@ -248,6 +304,76 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
                     worker.ReportProgress(100, "No files to convert");
                 }
 
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="doc"></param>
+        /// <param name="worker"></param>
+        private void AddFileToDoc(IncomingFileViewModel file, PdfDocument doc)
+        {
+
+            //handle multi page image files (multi frame tiffs)
+            List<BitmapSource> imgs = ImgToPdf.GetImagesFromFile(file.Info.FullName);
+            foreach (BitmapSource bmp in imgs)
+            {
+                //create the new page with the appropriate paper type and rotation
+                PdfPage page = doc.AddPage();
+
+                //get the orientation
+                Orientation o = Properties.Settings.Default.Rotation;
+                if (o == Orientation.AutoSelect)  //auto select based off image
+                {
+                    if (bmp.Height / bmp.Width > bmp.Width / bmp.Height)
+                        o = Orientation.Portrait;
+                    else
+                        o = Orientation.Landscape;
+                }
+
+                double ratio;
+                if (o == Orientation.Landscape)
+                {
+                    page.Rotate = 90;
+
+                    //auto detect paper size on undefined
+                    if (Properties.Settings.Default.PaperType == PageSize.Undefined)
+                        SetPageSizeByRatio(page, bmp.Height, bmp.Width);
+                    else
+                        page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
+
+                    ratio = Math.Min(page.Height.Value / bmp.Width, page.Width.Value / bmp.Height);
+                }
+                else
+                {
+                    //auto detect paper size on undefined
+                    if (Properties.Settings.Default.PaperType == PageSize.Undefined)
+                        SetPageSizeByRatio(page, bmp.Width, bmp.Height);
+                    else
+                        page.Size = Properties.Settings.Default.PaperType;  //one paper size for all converted documents... 
+
+                    ratio = Math.Min(page.Width.Value / bmp.Width, page.Height.Value / bmp.Height);
+                }
+
+                //convert to monochrome or otherwise compress prior to resizing
+                BitmapSource converted = bmp;
+                if (Properties.Settings.Default.ConvertToMonochrome)
+                {
+                    converted = new FormatConvertedBitmap(converted, PixelFormats.BlackWhite, BitmapPalettes.BlackAndWhite, 0);
+                }
+
+                //handle scaling here for better results/speed than the pdf lib scaling (keep aspect ratio)
+                Transform robotInDisguise = new ScaleTransform(ratio, ratio);
+                BitmapSource optimus = new TransformedBitmap(converted, robotInDisguise);
+
+                using (XGraphics gfx = XGraphics.FromPdfPage(page))
+                using (XImage ximg = XImage.FromBitmapSource(optimus))
+                {
+                    //draw the image full page onto the document (no margins)
+                    gfx.DrawImage(ximg, 0, 0, optimus.Width, optimus.Height);  //already scaled
+                }
             }
         }
 
@@ -274,7 +400,7 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
         /// Process the files in the list on a background worker...
         /// </summary>
         /// <param name="outFile"></param>
-        public void ProcessFilesAsync(List<IncomingFileViewModel> files, string outFile)
+        public void ProcessFilesAsync(List<IncomingFileViewModel> files, string outFile, string outFolder)
         {
             //create a background worker for the process files method
             this.currentWorker = new BackgroundWorker();
@@ -284,7 +410,10 @@ namespace com.eightlabs.BulkImageToPdf.ViewModels
             this.currentWorker.DoWork += new DoWorkEventHandler(
                 delegate(object s, DoWorkEventArgs args)
                 {
-                    this.ProcessFiles(files, outFile, this.currentWorker);
+                    if (outFile != null)
+                        this.ProcessFilesSinglePDF(files, outFile, this.currentWorker);
+                    else
+                        this.ProcessFilesMultiPdfs(files, outFolder, this.currentWorker);
                 });
 
 

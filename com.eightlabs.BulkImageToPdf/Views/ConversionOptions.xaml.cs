@@ -28,9 +28,14 @@ namespace com.eightlabs.BulkImageToPdf.Views
 
         private void Convert_Click(object sender, RoutedEventArgs e)
         {
-            ((ConversionOptionsScreenViewModel)this.DataContext).Main.Screens.MoveCurrentToNext();
             ((ConversionOptionsScreenViewModel)this.DataContext).Main.SaveSettings();
             ((ConversionOptionsScreenViewModel)this.DataContext).Main.Convert();
+        }
+
+        private void ConvertMulti_Click(object sender, RoutedEventArgs e)
+        {
+            ((ConversionOptionsScreenViewModel)this.DataContext).Main.SaveSettings();
+            ((ConversionOptionsScreenViewModel)this.DataContext).Main.ConvertMultiple();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)

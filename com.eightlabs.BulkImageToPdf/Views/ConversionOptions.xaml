@@ -30,8 +30,12 @@
         <DockPanel Margin="0,0,0,0" Width="Auto" Height="Auto">
             <Border DockPanel.Dock="Bottom" Margin="0,10,0,0" VerticalAlignment="Top" Height="Auto" Background="#FFECECEC" BorderBrush="#FFC9C9C9" BorderThickness="0,1,0,1" Padding="8,0,0,0">
                 <DockPanel Margin="0,8,0,8" Width="Auto" Height="Auto" Background="{x:Null}">
-                    <Button IsCancel="True"  Height="30" Width="100"  Content="Create Single PDF" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="Convert_Click"/>
-                    <Button IsCancel="True"  Height="30" Width="150"  Content="Create Multiple PDFs" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                    <Button Height="30" Width="100"  Content="Create Single PDF" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="Convert_Click">
+                        <Button.ToolTip>Creates a single PDF file with all the images provided</Button.ToolTip>
+                    </Button>
+                    <Button Height="30" Width="150"  Content="Create Multiple PDFs" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="ConvertMulti_Click">
+                        <Button.ToolTip>Creates a PDF file per image file in a specified folder</Button.ToolTip>
+                    </Button>
                     <Button IsCancel="True"  Height="30" Width="100"  Content="Cancel" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Center" DockPanel.Dock="Right" Click="Cancel_Click" />
                 </DockPanel>
             </Border>
@@ -46,6 +50,8 @@
 
                 <Grid Grid.Row="1" Margin="15">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -69,15 +75,23 @@
                     <TextBox Grid.Column="1" Grid.Row="2" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Subject, Mode=TwoWay}" />
                     <TextBox Grid.Column="1" Grid.Row="3" Margin="3" Text="{Binding Source={x:Static p:Settings.Default}, Path=Keywords, Mode=TwoWay}" />
 
+                    <Label Grid.Row="4" Grid.Column="0" Content="Page Size:"/>
                     <ComboBox Grid.Column="1" Grid.Row="4" Height="23" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Margin="3"
                               ItemsSource="{Binding Source={StaticResource PageSizes}}" SelectedItem="{Binding Source={x:Static p:Settings.Default}, Path=PaperType, Mode=TwoWay}" />
 
+                    <Label Grid.Row="5" Grid.Column="0" Content="Paper Orientation:"/>
                     <ComboBox Grid.Column="1" Grid.Row="5" Height="23" HorizontalAlignment="Left" VerticalAlignment="Top" Width="200" Margin="3"
                               ItemsSource="{Binding Source={StaticResource PageRotations}}" SelectedItem="{Binding Source={x:Static p:Settings.Default}, Path=Rotation, Mode=TwoWay}" />
 
-                    <CheckBox Grid.Column="1" Grid.Row="6" Margin="3" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=ConvertToMonochrome, Mode=TwoWay}" Content="Convert pages to Monochrome"  Name="checkBox3"  >
+                    <CheckBox Grid.Column="1" Grid.Row="6" Margin="3" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=ConvertToMonochrome, Mode=TwoWay}" Content="Convert pages to Monochrome" >
                         <CheckBox.ToolTip>
                             Converts the processed images to black and white to make the resulting PDF smaller in size
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+
+                    <CheckBox Grid.Column="1" Grid.Row="7" Margin="3" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=RetainFolderStructure, Mode=TwoWay}" Content="Retain Original Folder Structure">
+                        <CheckBox.ToolTip>
+                            Retains the folder structure of the original documents when creating Multiple PDFs
                         </CheckBox.ToolTip>
                     </CheckBox>
 

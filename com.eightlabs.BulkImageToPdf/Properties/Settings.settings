@@ -18,10 +18,13 @@
       <Value Profile="(Default)">Converted document</Value>
     </Setting>
     <Setting Name="Subject" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">http://www.8labs.com</Value>
     </Setting>
     <Setting Name="Keywords" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">Image to PDF Conversion</Value>
+    </Setting>
+    <Setting Name="RetainFolderStructure" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>
